@@ -126,3 +126,21 @@ export async function sendAiChatMessage(input: {
     body: JSON.stringify(input)
   }, false);
 }
+
+export async function updateProfile(input: { name?: string, email?: string }) {
+  return apiFetch<AuthResponse["user"]>("/auth/me", {
+    method: "PUT",
+    body: JSON.stringify(input)
+  }, true);
+}
+
+export async function deleteAccount() {
+  return apiFetch<void>("/auth/me", {
+    method: "DELETE"
+  }, true);
+}
+
+export async function getStats() {
+  return apiFetch<{ total: number; tagsCount: Record<string, number> }>("/passports/stats", {}, true);
+}
+

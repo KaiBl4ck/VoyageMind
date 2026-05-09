@@ -1,50 +1,25 @@
-import type { Router, Response } from "express";
-import express from "express";
+import { Router } from "express";
 import { z } from "zod";
-import prisma from "../prisma";
-import type { AuthRequest } from "../middleware/auth";
 import { authenticate } from "../middleware/auth";
 import { validate } from "../middleware/validate";
-import { AppError } from "../utils/AppError";
 
-const router: Router = express.Router();
+import { PrismaPassportRepository } from "../infrastructure/database/PrismaPassportRepository";
+import { PassportUseCases } from "../application/useCases/PassportUseCases";
+import { PassportController } from "../infrastructure/web/controllers/PassportController";
 
+const router = Router();
 router.use(authenticate);
 
+// Setup Clean Architecture instances
+const passportRepository = new PrismaPassportRepository();
+const passportUseCases = new PassportUseCases(passportRepository);
+const passportController = new PassportController(passportUseCases);
+
+// Schemas
 const passportIdSchema = z.object({
   params: z.object({
     id: z.string().uuid("ID inválido"),
   }),
-});
-
-router.get("/", async (req: AuthRequest, res: Response) => {
-  if (!req.user) throw new AppError("Usuário não autenticado", 401);
-
-  const passports = await prisma.passport.findMany({
-    where: { userId: req.user.id },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return res.json(passports);
-});
-
-router.get("/:id", validate(passportIdSchema), async (req: AuthRequest, res: Response) => {
-  if (!req.user) throw new AppError("Usuário não autenticado", 401);
-
-  const id = String(req.params.id);
-
-  const passport = await prisma.passport.findFirst({
-    where: {
-      id,
-      userId: req.user.id,
-    },
-  });
-
-  if (!passport) {
-    throw new AppError("Passport não encontrado", 404);
-  }
-
-  return res.json(passport);
 });
 
 const createPassportSchema = z.object({
@@ -54,24 +29,6 @@ const createPassportSchema = z.object({
     tag: z.string().optional(),
     unlockDate: z.string().optional(),
   }),
-});
-
-router.post("/", validate(createPassportSchema), async (req: AuthRequest, res: Response) => {
-  if (!req.user) throw new AppError("Usuário não autenticado", 401);
-
-  const { title, description, tag, unlockDate } = req.body;
-
-  const passport = await prisma.passport.create({
-    data: {
-      title,
-      description,
-      tag,
-      unlockDate: unlockDate ? new Date(unlockDate) : null,
-      userId: req.user.id,
-    },
-  });
-
-  return res.status(201).json(passport);
 });
 
 const updatePassportSchema = z.object({
@@ -86,57 +43,29 @@ const updatePassportSchema = z.object({
   }),
 });
 
-router.put("/:id", validate(updatePassportSchema), async (req: AuthRequest, res: Response) => {
-  if (!req.user) throw new AppError("Usuário não autenticado", 401);
-
-  const id = String(req.params.id);
-  const { title, description, tag, unlockDate } = req.body;
-
-  const existing = await prisma.passport.findFirst({
-    where: {
-      id,
-      userId: req.user.id,
-    },
-  });
-
-  if (!existing) {
-    throw new AppError("Passport não encontrado", 404);
-  }
-
-  const passport = await prisma.passport.update({
-    where: { id: existing.id },
-    data: {
-      title: title ?? existing.title,
-      description: description ?? existing.description,
-      tag: tag ?? existing.tag,
-      unlockDate: unlockDate !== undefined ? (unlockDate ? new Date(unlockDate) : null) : existing.unlockDate,
-    },
-  });
-
-  return res.json(passport);
+// Nova Feature 2: Dashboard de Estatísticas
+router.get("/stats", (req, res, next) => {
+  passportController.getStats(req, res).catch(next);
 });
 
-router.delete("/:id", validate(passportIdSchema), async (req: AuthRequest, res: Response) => {
-  if (!req.user) throw new AppError("Usuário não autenticado", 401);
+router.get("/", (req, res, next) => {
+  passportController.getAll(req, res).catch(next);
+});
 
-  const id = String(req.params.id);
+router.get("/:id", validate(passportIdSchema), (req, res, next) => {
+  passportController.getOne(req, res).catch(next);
+});
 
-  const existing = await prisma.passport.findFirst({
-    where: {
-      id,
-      userId: req.user.id,
-    },
-  });
+router.post("/", validate(createPassportSchema), (req, res, next) => {
+  passportController.create(req, res).catch(next);
+});
 
-  if (!existing) {
-    throw new AppError("Passport não encontrado", 404);
-  }
+router.put("/:id", validate(updatePassportSchema), (req, res, next) => {
+  passportController.update(req, res).catch(next);
+});
 
-  await prisma.passport.delete({
-    where: { id: existing.id },
-  });
-
-  return res.status(204).send();
+router.delete("/:id", validate(passportIdSchema), (req, res, next) => {
+  passportController.delete(req, res).catch(next);
 });
 
 export default router;

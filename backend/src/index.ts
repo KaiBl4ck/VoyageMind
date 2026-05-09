@@ -7,6 +7,8 @@ import aiRoutes from "./routes/ai";
 import { AppError } from "./utils/AppError";
 
 import path from "path";
+import swaggerUi from "swagger-ui-express";
+import swaggerDoc from "./swagger.json";
 
 const app = express();
 const port = process.env.PORT ?? 3333;
@@ -22,6 +24,7 @@ app.get("/", (_req: Request, res: Response) => {
 app.use("/auth", authRoutes);
 app.use("/passports", passportRoutes);
 app.use("/ai", aiRoutes);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 // Middleware de tratamento de erros genérico
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

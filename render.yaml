@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: voyagemind-backend
+    env: docker
+    region: ohio
+    plan: free
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        value: "file:./dev.db"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+    disk:
+      name: sqlite-data
+      mountPath: /app/prisma
+      sizeGB: 1

@@ -1,20 +1,18 @@
-import type { Router, Request, Response } from "express";
-import express from "express";
+import { Router } from "express";
 import multer from "multer";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { z } from "zod";
-import prisma from "../prisma";
-import type { AuthRequest } from "../middleware/auth";
 import { authenticate } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../utils/AppError";
 
-const router: Router = express.Router();
+import { PrismaUserRepository } from "../infrastructure/database/PrismaUserRepository";
+import { AuthUseCases } from "../application/useCases/AuthUseCases";
+import { UserUseCases } from "../application/useCases/UserUseCases";
+import { AuthController } from "../infrastructure/web/controllers/AuthController";
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
-const JWT_EXPIRES_IN = "7d";
+const router = Router();
 
+// Setup multer
 const upload = multer({
   dest: "uploads/",
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -28,38 +26,19 @@ const upload = multer({
   },
 });
 
+// Setup Clean Architecture instances
+const userRepository = new PrismaUserRepository();
+const authUseCases = new AuthUseCases(userRepository);
+const userUseCases = new UserUseCases(userRepository);
+const authController = new AuthController(authUseCases, userUseCases);
+
+// Schemas
 const registerSchema = z.object({
   body: z.object({
     name: z.string().min(1, "Nome é obrigatório"),
     email: z.string().email("Email inválido"),
     password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   }),
-});
-
-router.post("/register", validate(registerSchema), async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    throw new AppError("Email já está em uso", 409);
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-    },
-  });
-
-  return res.status(201).json({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    createdAt: user.createdAt,
-  });
 });
 
 const loginSchema = z.object({
@@ -69,78 +48,38 @@ const loginSchema = z.object({
   }),
 });
 
-router.post("/login", validate(loginSchema), async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
-  const user = await prisma.user.findUnique({ where: { email } });
-
-  if (!user) {
-    throw new AppError("Credenciais inválidas", 401);
-  }
-
-  const isValid = await bcrypt.compare(password, user.password);
-
-  if (!isValid) {
-    throw new AppError("Credenciais inválidas", 401);
-  }
-
-  const token = jwt.sign(
-    { userId: user.id, email: user.email },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN },
-  );
-
-  return res.json({
-    token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatarUrl: user.avatarUrl,
-    },
-  });
+const updateProfileSchema = z.object({
+  body: z.object({
+    name: z.string().min(1, "Nome não pode ser vazio").optional(),
+    email: z.string().email("Email inválido").optional(),
+  }),
 });
 
-router.get("/me", authenticate, async (req: AuthRequest, res: Response) => {
-  if (!req.user) {
-    throw new AppError("Usuário não autenticado", 401);
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.id },
-    include: { passports: true },
-  });
-
-  if (!user) {
-    throw new AppError("Usuário não encontrado", 404);
-  }
-
-  return res.json({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    avatarUrl: user.avatarUrl,
-    passports: user.passports,
-  });
+// Routes
+router.post("/register", validate(registerSchema), (req, res, next) => {
+  authController.register(req, res).catch(next);
 });
 
-router.post("/avatar", authenticate, upload.single("avatar"), async (req: AuthRequest, res: Response) => {
-  if (!req.user) {
-    throw new AppError("Usuário não autenticado", 401);
-  }
+router.post("/login", validate(loginSchema), (req, res, next) => {
+  authController.login(req, res).catch(next);
+});
 
-  if (!req.file) {
-    throw new AppError("Nenhuma imagem foi enviada.", 400);
-  }
+router.get("/me", authenticate, (req, res, next) => {
+  authController.getMe(req, res).catch(next);
+});
 
-  const avatarUrl = `/uploads/${req.file.filename}`;
+// Nova Feature 1: Atualização de Perfil
+router.put("/me", authenticate, validate(updateProfileSchema), (req, res, next) => {
+  authController.updateProfile(req, res).catch(next);
+});
 
-  const updatedUser = await prisma.user.update({
-    where: { id: req.user.id },
-    data: { avatarUrl },
-  });
+// Nova Feature 3: Exclusão de Conta
+router.delete("/me", authenticate, (req, res, next) => {
+  authController.deleteAccount(req, res).catch(next);
+});
 
-  return res.json({ avatarUrl: updatedUser.avatarUrl });
+router.post("/avatar", authenticate, upload.single("avatar"), (req, res, next) => {
+  authController.updateAvatar(req, res).catch(next);
 });
 
 export default router;

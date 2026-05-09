@@ -47,11 +47,11 @@ export function Navbar() {
     ];
 
     return (
-        <nav className={`${styles.navbar} ${isScrolled ? styles.scrolled : ''}`}>
+        <nav className={`${styles.navbar} ${isScrolled ? styles.scrolled : ''}`} aria-label="Navegação Principal">
             <div className={styles.navContainer}>
                 {/* Logo */}
                 <Link to="/" className={styles.logo}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="var(--color-turquoise)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M2 17L12 22L22 17" stroke="var(--color-sky-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M2 12L12 17L22 12" stroke="var(--color-purple-soft)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -75,8 +75,8 @@ export function Navbar() {
 
                 {/* Global Search & Profile */}
                 <div className={styles.actions}>
-                    <button className={styles.iconButton} aria-label="Pesquisar" onClick={() => navigate('/explore')}>
-                        <Search size={20} />
+                    <button className={styles.iconButton} aria-label="Pesquisar Explorar" onClick={() => navigate('/explore')}>
+                        <Search size={20} aria-hidden="true" />
                     </button>
 
                     <div className={styles.profileContainer} ref={dropdownRef}>
@@ -84,6 +84,8 @@ export function Navbar() {
                             <button 
                                 className={styles.profileLink} 
                                 onClick={() => setDropdownOpen(!dropdownOpen)}
+                                aria-expanded={dropdownOpen}
+                                aria-label="Menu de perfil do usuário"
                             >
                                 <div className={styles.profileAvatar}>
                                     {user.avatarUrl ? (
@@ -123,8 +125,8 @@ export function Navbar() {
                         )}
                     </div>
                     {/* Mobile Menu Toggle */}
-                    <button className={styles.mobileToggle} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    <button className={styles.mobileToggle} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu principal" aria-expanded={mobileMenuOpen}>
+                        {mobileMenuOpen ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
                     </button>
                 </div>
             </div>
