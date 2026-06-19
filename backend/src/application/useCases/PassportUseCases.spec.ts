@@ -55,7 +55,6 @@ describe("PassportUseCases", () => {
     expect(result.id).toBe("pass-1");
     expect(mockPassportRepo.create).toHaveBeenCalled();
   });
-  });
 
   describe("getPassport", () => {
     it("should throw AppError when passport is not found", async () => {

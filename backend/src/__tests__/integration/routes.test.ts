@@ -1,6 +1,26 @@
 import request from "supertest";
 import { createApp } from "../../index";
 
+jest.mock("../../prisma", () => ({
+  __esModule: true,
+  default: {
+    user: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    passport: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      count: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+  },
+}));
+
 const app = createApp();
 
 describe("Auth routes", () => {
@@ -21,7 +41,7 @@ describe("Auth routes", () => {
   it("POST /auth/register with weak password should return 400", async () => {
     const res = await request(app)
       .post("/auth/register")
-      .send({ name: "Teste", email: "teste@test.com", password: "fraca" });
+      .send({ name: "Teste", email: "teste@test.com", password: "fracaaa" });
     expect(res.status).toBe(400);
     expect(res.body.code).toBe("WEAK_PASSWORD");
   });

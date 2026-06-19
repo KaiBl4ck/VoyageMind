@@ -36,7 +36,7 @@ describe("AuthUseCases", () => {
       });
 
       await expect(
-        authUseCases.register({ name: "Test", email: "test@test.com", password: "123" })
+        authUseCases.register({ name: "Test", email: "test@test.com", password: "Password123" })
       ).rejects.toBeInstanceOf(AppError);
     });
 
@@ -52,9 +52,9 @@ describe("AuthUseCases", () => {
         updatedAt: new Date(),
       });
 
-      const result = await authUseCases.register({ name: "New User", email: "new@test.com", password: "password" });
+      const result = await authUseCases.register({ name: "New User", email: "new@test.com", password: "Password123" });
 
-      expect(bcrypt.hash).toHaveBeenCalledWith("password", 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith("Password123", 10);
       expect(mockUserRepo.create).toHaveBeenCalledWith({
         name: "New User",
         email: "new@test.com",

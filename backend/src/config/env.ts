@@ -14,7 +14,7 @@ import { logger } from "./logger";
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  logger.error("Variáveis de ambiente inválidas:", parsed.error.format());
+  logger.error({ error: parsed.error.format() }, "Variáveis de ambiente inválidas:");
   process.exit(1);
 }
 

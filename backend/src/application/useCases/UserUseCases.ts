@@ -48,7 +48,7 @@ export class UserUseCases {
       const db = await getMongoDb();
       await db.collection("chat_history").deleteOne({ userId });
     } catch (err) {
-      logger.error("Erro ao deletar histórico do MongoDB:", err);
+      logger.error({ err }, "Erro ao deletar histórico do MongoDB:");
     }
   }
 }

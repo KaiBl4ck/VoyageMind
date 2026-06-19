@@ -1,4 +1,4 @@
-import { GeminiHistoryEntry } from "../application/dtos/ChatDTO";
+import { GeminiHistoryEntry } from "../../application/dtos/ChatDTO";
 
 export interface GenerateRouteInput {
   destination?: string;

@@ -18,7 +18,7 @@ const passportController = new PassportController(passportUseCases);
 // Schemas
 const passportIdSchema = z.object({
   params: z.object({
-    id: z.string().uuid("ID inválido"),
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, "ID inválido"),
   }),
 });
 
@@ -33,7 +33,7 @@ const createPassportSchema = z.object({
 
 const updatePassportSchema = z.object({
   params: z.object({
-    id: z.string().uuid("ID inválido"),
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, "ID inválido"),
   }),
   body: z.object({
     title: z.string().min(1, "Título não pode ser vazio").optional(),

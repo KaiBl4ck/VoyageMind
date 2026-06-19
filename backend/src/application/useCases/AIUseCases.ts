@@ -12,7 +12,7 @@ export class AIUseCases {
       const history = await db.collection("chat_history").findOne({ userId });
       return (history?.messages as ChatMessage[]) || [];
     } catch (error) {
-      logger.error("Erro ao buscar histórico:", error);
+      logger.error({ err: error }, "Erro ao buscar histórico:");
       return [];
     }
   }
@@ -22,7 +22,7 @@ export class AIUseCases {
       const db = await getMongoDb();
       await db.collection("chat_history").deleteOne({ userId });
     } catch (error) {
-      logger.error("Erro ao deletar histórico:", error);
+      logger.error({ err: error }, "Erro ao deletar histórico:");
       throw error;
     }
   }
@@ -57,11 +57,11 @@ export class AIUseCases {
           $push: { messages: { $each: newMessages } },
           $setOnInsert: { createdAt: new Date() },
           $set: { updatedAt: new Date() }
-        },
+        } as any,
         { upsert: true }
       );
     } catch (error) {
-      logger.error("Erro ao salvar log no Mongo:", error);
+      logger.error({ err: error }, "Erro ao salvar log no Mongo:");
     }
 
     return text;

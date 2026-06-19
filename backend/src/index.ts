@@ -9,7 +9,6 @@ import { getMongoDb } from "./infrastructure/database/MongoClient";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import swaggerDoc from "./swagger.json";
-import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 
 // Clean Architecture - AI
@@ -93,7 +92,6 @@ export function createApp() {
 
   app.use(compression());
   app.use(express.json());
-  app.use(mongoSanitize());
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
   app.get("/", (_req: Request, res: Response) => {
@@ -129,7 +127,7 @@ if (process.env.NODE_ENV !== "test") {
         await getMongoDb();
         logger.info('Conectado ao MongoDB para Logs de IA');
       } catch (err) {
-        logger.error('Falha ao conectar no MongoDB:', err);
+        logger.error({ err }, 'Falha ao conectar no MongoDB:');
       }
     } else {
       logger.info('MONGODB_URI não fornecida. Logs de IA não serão persistidos.');
