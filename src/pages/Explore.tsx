@@ -148,10 +148,11 @@ export function Explore() {
                 out center 100;
             `;
 
-            const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-                method: 'POST',
-                body: overpassQuery,
-            });
+           const overpassRes = await fetch(`${import.meta.env.VITE_API_URL}/geo/overpass`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ query: overpassQuery }),
+});
             const overpassData = await overpassRes.json();
 
             const parsed: Place[] =
@@ -274,10 +275,10 @@ export function Explore() {
                 >
                     <MapFlyTo center={center} zoom={zoom} />
                     <TileLayer
-                        attribution='&copy; OpenStreetMap'
-                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                        noWrap={true}
-                    />
+  attribution='&copy; OpenStreetMap'
+  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+  noWrap={true}
+/>
 
                     {places.map((place) => (
                         <Marker
