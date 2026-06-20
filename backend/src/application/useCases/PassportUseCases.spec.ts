@@ -88,6 +88,7 @@ describe("PassportUseCases", () => {
 
       const result = await passportUseCases.updatePassport("pass-1", "user-1", { title: "Atualizado" });
 
+      expect(result.title).toBe("Atualizado");
       expect(mockPassportRepo.update).toHaveBeenCalledWith("pass-1", expect.objectContaining({
         title: "Atualizado",
         description: "Desc original",

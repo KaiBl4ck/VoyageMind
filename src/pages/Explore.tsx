@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LocateFixed, Search, Sparkles, MapPin, Star, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-// @ts-ignore
 import html2pdf from 'html2pdf.js';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
@@ -18,6 +17,22 @@ type Place = {
     lat: number;
     lng: number;
 };
+
+interface OverpassElement {
+    id: number;
+    tags?: {
+        name?: string;
+        tourism?: string;
+        historic?: string;
+        leisure?: string;
+    };
+    lat?: number;
+    lon?: number;
+    center?: {
+        lat: number;
+        lon: number;
+    };
+}
 
 const WORLD_CENTER: LatLngExpression = [20, 0];
 
@@ -66,6 +81,7 @@ export function Explore() {
         };
         
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await html2pdf().set(opt as any).from(element).save();
         } finally {
             element.style.display = 'none';
@@ -83,7 +99,7 @@ export function Explore() {
 
     const selectedPlace = places.find((p) => p.id === selectedPlaceId) ?? null;
 
-    async function handleSearchSubmit(e?: React.FormEvent, searchStr?: string) {
+    const handleSearchSubmit = useCallback(async (e?: React.FormEvent, searchStr?: string) => {
         if (e) e.preventDefault();
         const trimmed = (searchStr !== undefined ? searchStr : query).trim();
         if (!trimmed) {
@@ -98,7 +114,7 @@ export function Explore() {
         try {
             setLoading(true);
             setError(null);
-
+ 
           const geoRes = await fetch(
   `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}&limit=1`,
   { 
@@ -139,15 +155,15 @@ export function Explore() {
             const overpassData = await overpassRes.json();
 
             const parsed: Place[] =
-                overpassData.elements?.map((el: any) => ({
+                (overpassData.elements as OverpassElement[])?.map((el) => ({
                     id: el.id,
                     name: el.tags?.name ?? 'Local Turístico',
                     type: el.tags?.tourism ? 'Ponto Turístico' :
                           el.tags?.historic ? 'Local Histórico' : 
                           el.tags?.leisure ? 'Parque/Lazer' : 'Restaurante/Café',
-                    lat: el.lat ?? el.center?.lat,
-                    lng: el.lon ?? el.center?.lon,
-                })).filter((p: any) => p.name !== 'Local Turístico' && p.lat && p.lng) ?? [];
+                    lat: el.lat ?? el.center?.lat ?? 0,
+                    lng: el.lon ?? el.center?.lon ?? 0,
+                })).filter((p) => p.name !== 'Local Turístico' && p.lat && p.lng) ?? [];
 
             setPlaces(parsed);
             setSelectedPlaceId(null);
@@ -161,14 +177,14 @@ export function Explore() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [query]);
 
     useEffect(() => {
         if (location.state?.q) {
             handleSearchSubmit(undefined, location.state.q);
             window.history.replaceState({}, document.title);
         }
-    }, [location.state?.q]);
+    }, [location.state?.q, handleSearchSubmit]);
 
     async function handleAiSuggest() {
         if (!chatInput.trim()) return;
@@ -237,7 +253,7 @@ export function Explore() {
             setReviewText('');
             setRating(5);
             alert("Check-in e avaliação salvos no seu Passaporte!");
-        } catch (e) {
+        } catch {
             alert("Erro ao salvar no Passaporte. Faça login primeiro!");
         }
     }

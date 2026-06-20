@@ -11,6 +11,7 @@ export class UserUseCases {
     if (!user) throw new AppError("Usuário não encontrado", 404, "USER_NOT_FOUND");
     
     // We avoid returning passwords
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...safeUser } = user;
     return safeUser;
   }
@@ -29,6 +30,7 @@ export class UserUseCases {
       email: data.email ?? user.email,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...safeUser } = updatedUser;
     return safeUser;
   }

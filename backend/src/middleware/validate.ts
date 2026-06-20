@@ -1,7 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import { z, ZodError } from "zod";
+import { z, ZodError, ZodIssue } from "zod";
 
 export const validate =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (schema: z.ZodObject<any, any>) =>
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -21,7 +22,7 @@ export const validate =
       if (error instanceof ZodError) {
         res.status(400).json({
           message: "Erro de validação",
-          errors: (error.issues || []).map((e: any) => ({
+          errors: (error.issues || []).map((e: ZodIssue) => ({
             field: e.path.join("."),
             message: e.message,
           })),

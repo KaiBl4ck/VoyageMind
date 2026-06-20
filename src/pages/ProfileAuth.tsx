@@ -43,7 +43,7 @@ export function ProfileAuth() {
             setError(null);
             const { avatarUrl } = await uploadAvatar(file);
             updateAvatar(avatarUrl);
-        } catch (err) {
+        } catch {
             setError("Erro ao salvar foto no backend.");
         } finally {
             setUploadingAvatar(false);
@@ -56,7 +56,7 @@ export function ProfileAuth() {
             const updatedUser = await updateProfile({ name: editName });
             login(localStorage.getItem('voyagemind_token') || '', updatedUser);
             setIsEditing(false);
-        } catch (err) {
+        } catch {
             setError("Erro ao atualizar perfil.");
         } finally {
             setLoading(false);
@@ -70,7 +70,7 @@ export function ProfileAuth() {
                 await deleteAccount();
                 logout();
                 navigate('/');
-            } catch (err) {
+            } catch {
                 setError("Erro ao excluir conta.");
             } finally {
                 setLoading(false);

@@ -1,5 +1,5 @@
 import { AIUseCases } from "./AIUseCases";
-import { IAIRepository, GenerateRouteInput } from "../../domain/repositories/IAIRepository";
+import { IAIRepository } from "../../domain/repositories/IAIRepository";
 
 // Mock para MongoClient
 jest.mock("../../infrastructure/database/MongoClient", () => ({

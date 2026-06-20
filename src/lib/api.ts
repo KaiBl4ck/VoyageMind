@@ -131,7 +131,7 @@ export async function sendAiChatMessage(input: {
   return apiFetch<{ text: string }>("/ai/chat", {
     method: "POST",
     body: JSON.stringify(input)
-  }, false);
+  }, true);
 }
 
 export async function updateProfile(input: { name?: string, email?: string }) {

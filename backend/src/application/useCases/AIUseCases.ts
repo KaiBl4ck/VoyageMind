@@ -1,4 +1,4 @@
-import { IAIRepository, GenerateRouteInput } from "../../domain/repositories/IAIRepository";
+import { IAIRepository } from "../../domain/repositories/IAIRepository";
 import { getMongoDb } from "../../infrastructure/database/MongoClient";
 import { logger } from "../../config/logger";
 import { ChatMessage, GeminiHistoryEntry } from "../dtos/ChatDTO";
@@ -57,7 +57,8 @@ export class AIUseCases {
           $push: { messages: { $each: newMessages } },
           $setOnInsert: { createdAt: new Date() },
           $set: { updatedAt: new Date() }
-        } as any,
+        } as // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        any,
         { upsert: true }
       );
     } catch (error) {

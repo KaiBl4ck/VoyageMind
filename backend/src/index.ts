@@ -15,7 +15,7 @@ import rateLimit from "express-rate-limit";
 import { Router } from "express";
 import { z } from "zod";
 import { validate } from "./middleware/validate";
-import { authenticate } from "./middleware/auth";
+import { authenticate, AuthRequest } from "./middleware/auth";
 import { GeminiAIRepository } from "./infrastructure/ai/GeminiAIRepository";
 import { AIUseCases } from "./application/useCases/AIUseCases";
 import { AIController } from "./infrastructure/web/controllers/AIController";
@@ -65,13 +65,13 @@ aiRouter.post("/suggest", validate(suggestSchema), (req, res, next) => {
   aiController.suggest(req, res).catch(next);
 });
 aiRouter.get("/history", authenticate, (req, res, next) => {
-  aiController.getHistory(req as any, res).catch(next);
+  aiController.getHistory(req as AuthRequest, res).catch(next);
 });
 aiRouter.delete("/history", authenticate, (req, res, next) => {
-  aiController.clearHistory(req as any, res).catch(next);
+  aiController.clearHistory(req as AuthRequest, res).catch(next);
 });
 aiRouter.post("/chat", authenticate, validate(chatSchema), (req, res, next) => {
-  aiController.chat(req as any, res).catch(next);
+  aiController.chat(req as AuthRequest, res).catch(next);
 });
 
 import compression from "compression";
@@ -103,7 +103,17 @@ app.set('trust proxy', 1);
   app.use("/ai", aiLimiter, aiRouter);
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
-  // Middleware de tratamento de erros genérico
+app.get("/geo/search", async (req: Request, res: Response) => {
+  const { q } = req.query;
+  if (!q) return res.status(400).json({ message: "Query obrigatória" });
+  
+  const geoRes = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(q))}&limit=1`,
+    { headers: { 'User-Agent': 'VoyageMind/1.0 (henriquemataalb34@gmail.com)' } }
+  );
+  const data = await geoRes.json();
+  res.json(data);
+});
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof AppError) {

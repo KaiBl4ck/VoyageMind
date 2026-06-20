@@ -44,7 +44,7 @@ export function Passport() {
                 setPassports(result.data || []);
                 setTotalPages(result.totalPages || 1);
                 setCurrentPage(result.page || 1);
-            } catch (err) {
+            } catch {
                 // ignore
             } finally {
                 const stored = localStorage.getItem('voyagemind_visits');
@@ -110,7 +110,7 @@ export function Passport() {
                     tag: isCapsule ? 'Cápsula' : 'Anterior',
                     unlockDate: unlockStr
                 });
-            } catch(e) {
+            } catch {
                // ignore cloud errors, we save locally.
             }
 
@@ -137,7 +137,7 @@ export function Passport() {
             setIsCapsule(false);
             setCapsuleUnlockDate('');
 
-        } catch (e) {
+        } catch {
             alert('Erro ao buscar o local ou salvar. Tente novamente.');
         } finally {
             setAddLoading(false);

@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const data = await getCurrentUser();
             setUser({ id: data.id, name: data.name, email: data.email, avatarUrl: data.avatarUrl });
-        } catch (err) {
+        } catch {
             localStorage.removeItem('voyagemind_token');
             localStorage.removeItem('voyagemind_user_name');
             setUser(null);
@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }

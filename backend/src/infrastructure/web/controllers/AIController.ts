@@ -17,7 +17,7 @@ export class AIController {
     try {
       await this.aiUseCases.clearHistory(userId);
       res.status(204).send();
-    } catch (err) {
+    } catch {
       throw new AppError("Erro ao deletar histórico", 500);
     }
   }

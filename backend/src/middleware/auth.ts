@@ -36,7 +36,7 @@ export function authenticate(
     const payload = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
     req.user = { id: payload.userId, email: payload.email };
     next();
-  } catch (error) {
+  } catch {
     throw new AppError("Token inválido ou expirado", 401, "UNAUTHORIZED");
   }
 }
