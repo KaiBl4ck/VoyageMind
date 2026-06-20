@@ -78,7 +78,7 @@ import compression from "compression";
 
 export function createApp() {
   const app = express();
-app.set('trust proxy', 1);
+  app.set('trust proxy', 1);
   app.use(cors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
@@ -103,23 +103,44 @@ app.set('trust proxy', 1);
   app.use("/ai", aiLimiter, aiRouter);
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
-app.get("/geo/search", async (req: Request, res: Response) => {
-  const { q } = req.query;
-  if (!q) return res.status(400).json({ message: "Query obrigatória" });
-  
-  const geoRes = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(q))}&limit=1`,
-    { headers: { 'User-Agent': 'VoyageMind/1.0 (henriquemataalb34@gmail.com)' } }
-  );
-  const data = await geoRes.json();
-  res.json(data);
-});
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  app.get("/geo/search", async (req: Request, res: Response) => {
+    const { q } = req.query;
+    if (!q) return res.status(400).json({ message: "Query obrigatória" });
+
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(q))}&limit=1`,
+      { headers: { 'User-Agent': 'VoyageMind/1.0 (henriquemataalb34@gmail.com)' } }
+    );
+    const data = await geoRes.json();
+    res.json(data);
+  });
+  app.get("/geo/search", async (req: Request, res: Response) => {
+    const { q } = req.query;
+    if (!q) return res.status(400).json({ message: "Query obrigatória" });
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(q))}&limit=1`,
+      { headers: { "User-Agent": "VoyageMind/1.0 (henriquemataalb34@gmail.com)" } }
+    );
+    const data = await geoRes.json();
+    res.json(data);
+  });
+
+  app.post("/geo/overpass", async (req: Request, res: Response) => {
+    const { query } = req.body;
+    if (!query) return res.status(400).json({ message: "Query obrigatória" });
+    const overpassRes = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query,
+      headers: { "User-Agent": "VoyageMind/1.0 (henriquemataalb34@gmail.com)" }
+    });
+    const data = await overpassRes.json();
+    res.json(data);
+  });
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof AppError) {
       return res.status(err.statusCode).json({ message: err.message, code: err.code });
     }
-    
+
     logger.error(err);
     res.status(500).json({ message: "Erro interno do servidor", code: "GENERIC_ERROR" });
   });
