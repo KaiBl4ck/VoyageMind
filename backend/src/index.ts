@@ -23,7 +23,7 @@ import { AIController } from "./infrastructure/web/controllers/AIController";
 const port = env.PORT;
 
 const allowedOrigins = [
-  "https://voyagemind.vercel.app",
+  "https://voyage-mind-xi.versel.app",
   "http://localhost:5173",
 ];
 
