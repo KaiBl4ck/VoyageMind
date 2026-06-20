@@ -146,7 +146,7 @@ export function ProfileAuth() {
                                     >
                                         <Camera size={16} aria-hidden="true" /> Alterar Foto
                                     </button>
-                                    <input type="file" ref={fileInputRef} onChange={handleAvatarChange} style={{ display: 'none' }} accept="image/*" aria-hidden="true" tabindex="-1" />
+                                    <input type="file" ref={fileInputRef} onChange={handleAvatarChange} style={{ display: 'none' }} accept="image/*" aria-hidden="true" tabIndex="-1" />
                                 </div>
                             </div>
 
