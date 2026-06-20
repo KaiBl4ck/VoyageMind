@@ -99,12 +99,15 @@ export function Explore() {
             setLoading(true);
             setError(null);
 
-            const geoRes = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-                    trimmed,
-                )}&limit=1`,
-                { headers: { 'Accept-Language': 'pt-BR' } },
-            );
+          const geoRes = await fetch(
+  `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}&limit=1`,
+  { 
+    headers: { 
+      'Accept-Language': 'pt-BR',
+      'User-Agent': 'VoyageMind/1.0 (henriquemataalb34@gmail.com)'
+    } 
+  },
+);
             const geoData = await geoRes.json();
 
             if (!geoData.length) {
