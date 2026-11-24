@@ -153,6 +153,7 @@ export function createApp() {
 
     return res.status(502).json({ message: "Serviço de pontos turísticos temporariamente indisponível" });
   });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof AppError) {
       return res.status(err.statusCode).json({ message: err.message, code: err.code });
