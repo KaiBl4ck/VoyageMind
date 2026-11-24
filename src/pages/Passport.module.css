@@ -96,6 +96,11 @@
 .historyMap {
     width: 100%;
     height: 100%;
+    background-color: var(--color-bg-dark);
+}
+
+.historyMap :global(.leaflet-tile-pane) {
+    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 
 .achievementsPanel {

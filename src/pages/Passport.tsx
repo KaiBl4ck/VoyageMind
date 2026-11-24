@@ -191,7 +191,8 @@ export function Passport() {
                                 >
                                     <TileLayer
                                         attribution='&copy; OpenStreetMap'
-                                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                        noWrap={true}
                                     />
                                     {localHistory.map((visit, i) => {
                                         const isLocked = visit.unlockDate && new Date(visit.unlockDate) > new Date();
