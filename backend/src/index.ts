@@ -109,32 +109,49 @@ export function createApp() {
 
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(q))}&limit=1`,
-      { headers: { 'User-Agent': 'VoyageMind/1.0 (henriquemataalb34@gmail.com)' } }
-    );
-    const data = await geoRes.json();
-    res.json(data);
-  });
-  app.get("/geo/search", async (req: Request, res: Response) => {
-    const { q } = req.query;
-    if (!q) return res.status(400).json({ message: "Query obrigatória" });
-    const geoRes = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(q))}&limit=1`,
       { headers: { "User-Agent": "VoyageMind/1.0 (henriquemataalb34@gmail.com)" } }
     );
+    if (!geoRes.ok) {
+      return res.status(502).json({ message: "Falha ao consultar serviço de geocodificação" });
+    }
     const data = await geoRes.json();
     res.json(data);
   });
 
   app.post("/geo/overpass", async (req: Request, res: Response) => {
-    const { query } = req.body;
+    const { query } = req.body as { query?: string };
     if (!query) return res.status(400).json({ message: "Query obrigatória" });
-    const overpassRes = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      body: query,
-      headers: { "User-Agent": "VoyageMind/1.0 (henriquemataalb34@gmail.com)" }
-    });
-    const data = await overpassRes.json();
-    res.json(data);
+
+    const endpoints = [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter",
+    ];
+    const encodedBody = new URLSearchParams({ data: query }).toString();
+
+    for (const endpoint of endpoints) {
+      try {
+        const overpassRes = await fetch(endpoint, {
+          method: "POST",
+          body: encodedBody,
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "VoyageMind/1.0 (henriquemataalb34@gmail.com)",
+          },
+          signal: AbortSignal.timeout(25000),
+        });
+
+        if (!overpassRes.ok) continue;
+
+        const data = (await overpassRes.json()) as { elements?: unknown[]; remark?: string };
+        if (Array.isArray(data.elements) && (!data.remark || data.elements.length > 0)) {
+          return res.json(data);
+        }
+      } catch (err) {
+        logger.warn({ err, endpoint }, "Falha ao consultar Overpass");
+      }
+    }
+
+    return res.status(502).json({ message: "Serviço de pontos turísticos temporariamente indisponível" });
   });
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof AppError) {

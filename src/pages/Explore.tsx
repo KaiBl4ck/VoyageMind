@@ -7,7 +7,7 @@ import html2pdf from 'html2pdf.js';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 import styles from './Explore.module.css';
-import { sendAiChatMessage, createPassport } from '../lib/api';
+import { sendAiChatMessage, createPassport, getApiBaseUrl } from '../lib/api';
 import { useAuth } from '../lib/AuthContext';
 
 type Place = {
@@ -32,6 +32,54 @@ interface OverpassElement {
         lat: number;
         lon: number;
     };
+}
+
+interface OverpassResponse {
+    elements?: OverpassElement[];
+    remark?: string;
+}
+
+const DIRECT_OVERPASS_ENDPOINTS = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+];
+
+async function fetchOverpassData(overpassQuery: string): Promise<OverpassResponse> {
+    try {
+        const proxyRes = await fetch(`${getApiBaseUrl()}/geo/overpass`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: overpassQuery }),
+        });
+        if (proxyRes.ok) {
+            const data = (await proxyRes.json()) as OverpassResponse;
+            if (Array.isArray(data.elements) && (!data.remark || data.elements.length > 0)) {
+                return data;
+            }
+        }
+    } catch {
+        // Fallback to direct Overpass endpoints below
+    }
+
+    const encodedBody = new URLSearchParams({ data: overpassQuery }).toString();
+    for (const endpoint of DIRECT_OVERPASS_ENDPOINTS) {
+        try {
+            const directRes = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: encodedBody,
+            });
+            if (!directRes.ok) continue;
+            const data = (await directRes.json()) as OverpassResponse;
+            if (Array.isArray(data.elements) && (!data.remark || data.elements.length > 0)) {
+                return data;
+            }
+        } catch {
+            // Try next mirror
+        }
+    }
+
+    throw new Error('Overpass unavailable');
 }
 
 const WORLD_CENTER: LatLngExpression = [20, 0];
@@ -140,31 +188,39 @@ export function Explore() {
             const overpassQuery = `
                 [out:json][timeout:25];
                 (
-                  nwr["tourism"](around:5000,${latNum},${lonNum});
-                  nwr["historic"](around:5000,${latNum},${lonNum});
-                  nwr["leisure"="park"](around:5000,${latNum},${lonNum});
-                  nwr["amenity"="restaurant"](around:5000,${latNum},${lonNum});
+                  nwr["tourism"]["tourism"!~"hotel|hostel|motel|guest_house|apartment|chalet"]["name"](around:10000,${latNum},${lonNum});
+                  nwr["historic"]["name"](around:10000,${latNum},${lonNum});
+                  nwr["leisure"="park"]["name"](around:10000,${latNum},${lonNum});
                 );
                 out center 100;
             `;
 
-           const overpassRes = await fetch(`${import.meta.env.VITE_API_URL}/geo/overpass`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ query: overpassQuery }),
-});
-            const overpassData = await overpassRes.json();
+            const overpassData = await fetchOverpassData(overpassQuery);
 
-            const parsed: Place[] =
-                (overpassData.elements as OverpassElement[])?.map((el) => ({
+            const uniqueByName = new Map<string, Place>();
+            for (const el of overpassData.elements ?? []) {
+                const name = el.tags?.name?.trim();
+                const lat = el.lat ?? el.center?.lat ?? 0;
+                const lng = el.lon ?? el.center?.lon ?? 0;
+                if (!name || !lat || !lng) continue;
+
+                const key = name.toLowerCase();
+                if (uniqueByName.has(key)) continue;
+
+                uniqueByName.set(key, {
                     id: el.id,
-                    name: el.tags?.name ?? 'Local Turístico',
-                    type: el.tags?.tourism ? 'Ponto Turístico' :
-                          el.tags?.historic ? 'Local Histórico' : 
-                          el.tags?.leisure ? 'Parque/Lazer' : 'Restaurante/Café',
-                    lat: el.lat ?? el.center?.lat ?? 0,
-                    lng: el.lon ?? el.center?.lon ?? 0,
-                })).filter((p) => p.name !== 'Local Turístico' && p.lat && p.lng) ?? [];
+                    name,
+                    type: el.tags?.tourism === 'viewpoint' || el.tags?.leisure === 'park'
+                        ? 'Mirante/Natureza'
+                        : el.tags?.historic
+                            ? 'Local Histórico'
+                            : 'Ponto Turístico',
+                    lat,
+                    lng,
+                });
+            }
+
+            const parsed = Array.from(uniqueByName.values());
 
             setPlaces(parsed);
             setSelectedPlaceId(null);

@@ -20,7 +20,11 @@
 .leafletMap {
     width: 100%;
     height: 100%;
-    /* Filter to make map dark style dynamically */
+    background-color: var(--color-bg-dark);
+}
+
+.leafletMap :global(.leaflet-tile-pane) {
+    /* Filter to make map dark style dynamically without inverting markers/popups */
     filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 
